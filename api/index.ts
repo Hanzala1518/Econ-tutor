@@ -153,13 +153,30 @@ const app = express();
 app.use(express.json());
 
 // Initialize Gemini - NOTE: Ensure GEMINI_API_KEY is set in Vercel Dashboard
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  console.error("CRITICAL: GEMINI_API_KEY is not set in environment variables!");
+}
+
 const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+  apiKey: apiKey || "",
 });
 
 // --- CHAT ENDPOINT ---
 app.post("/api/chat", async (req, res) => {
   try {
+    console.log("Chat endpoint called with body:", req.body);
+    
+    // Check API key
+    if (!apiKey) {
+      console.error("API Key missing!");
+      return res.status(500).json({ 
+        message: "Server configuration error", 
+        detail: "API key not configured. Please set GEMINI_API_KEY in Vercel environment variables."
+      });
+    }
+    
     const { query } = req.body;
     
     if (!query) {
@@ -223,8 +240,13 @@ USER QUESTION: ${query}`;
 
     const answer = response.text;
     res.json({ answer });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Chat Error:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.status,
+      stack: error?.stack
+    });
     
     if (isApiLimitError(error)) {
       res.status(429).json({ 
@@ -240,6 +262,16 @@ USER QUESTION: ${query}`;
 // --- PODCAST ENDPOINT ---
 app.post("/api/podcast", async (req, res) => {
   try {
+    console.log("Podcast endpoint called");
+    
+    // Check API key
+    if (!apiKey) {
+      return res.status(500).json({ 
+        message: "Server configuration error", 
+        detail: "API key not configured"
+      });
+    }
+    
     const prompt = `Generate a short, engaging 2-person dialogue script (Speaker as "Student" and "Professor") discussing the 'Kinked Demand Curve' and Oligopoly based on the following context: ${FULL_CONTEXT}. 
     The dialogue should:
     1. Have the Student ask clarifying questions an exam student would ask
@@ -276,8 +308,12 @@ app.post("/api/podcast", async (req, res) => {
     }
 
     res.json({ script });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Podcast Error:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.status
+    });
     
     if (isApiLimitError(error)) {
       res.status(429).json({ 
@@ -293,6 +329,16 @@ app.post("/api/podcast", async (req, res) => {
 // --- SUMMARY ENDPOINT ---
 app.post("/api/summary", async (req, res) => {
   try {
+    console.log("Summary endpoint called with videoId:", req.body.videoId);
+    
+    // Check API key
+    if (!apiKey) {
+      return res.status(500).json({ 
+        message: "Server configuration error", 
+        detail: "API key not configured"
+      });
+    }
+    
     const { videoId } = req.body;
     const specificTranscript = TRANSCRIPTS[videoId];
 
@@ -318,8 +364,12 @@ app.post("/api/summary", async (req, res) => {
 
     const summary = response.text;
     res.json({ summary });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Summary Error:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.status
+    });
     
     if (isApiLimitError(error)) {
       res.status(429).json({ 
@@ -332,6 +382,5 @@ app.post("/api/summary", async (req, res) => {
   }
 });
 
-// 3. EXPORT THE APP FOR VERCEL
+// 3. EXPORT HANDLER FOR VERCEL SERVERLESS
 export default app;
-// Forcing a redeploy - 1
