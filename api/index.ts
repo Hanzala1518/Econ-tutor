@@ -458,4 +458,10 @@ app.post("/api/summary", async (req, res) => {
 });
 
 // 3. EXPORT HANDLER FOR VERCEL SERVERLESS
-export default app;
+// Vercel expects a handler function, not an Express app directly
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async (req: VercelRequest, res: VercelResponse) => {
+  // Pass the request to Express app
+  return app(req as any, res as any);
+};
