@@ -190,13 +190,11 @@ app.get("/api/test-gemini", async (req, res) => {
     const genAI = getGeminiClient();
     console.log("✅ [TEST] Client created successfully");
     
-    const model = genAI.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: [{ role: "user", parts: [{ text: "Say hello in one word" }] }],
-    });
-    
     console.log("✅ [TEST] API call initiated");
-    const response = await model;
+    const response = await genAI.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: "Say hello in one word",
+    });
     console.log("✅ [TEST] Response received:", JSON.stringify(response).slice(0, 200));
     
     const text = response.text;
@@ -291,7 +289,7 @@ USER QUESTION: ${query}`;
 
     const response = await genAI.models.generateContent({
       model: "gemini-1.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: prompt,
     });
 
     const answer = response.text;
@@ -342,7 +340,7 @@ app.post("/api/podcast", async (req, res) => {
 
     const response = await genAI.models.generateContent({
       model: "gemini-1.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: prompt,
     });
 
     let text = response.text || "";
@@ -428,7 +426,7 @@ app.post("/api/summary", async (req, res) => {
 
     const response = await genAI.models.generateContent({
       model: "gemini-1.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: prompt,
     });
 
     const summary = response.text;
