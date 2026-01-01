@@ -182,6 +182,43 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Debug endpoint to test Gemini API directly
+app.get("/api/test-gemini", async (req, res) => {
+  try {
+    console.log("🧪 [TEST] Testing Gemini API...");
+    
+    const genAI = getGeminiClient();
+    console.log("✅ [TEST] Client created successfully");
+    
+    const model = genAI.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: [{ role: "user", parts: [{ text: "Say hello in one word" }] }],
+    });
+    
+    console.log("✅ [TEST] API call initiated");
+    const response = await model;
+    console.log("✅ [TEST] Response received:", JSON.stringify(response).slice(0, 200));
+    
+    const text = response.text;
+    console.log("✅ [TEST] Text extracted:", text);
+    
+    res.json({
+      success: true,
+      text: text,
+      responseType: typeof response,
+      responseKeys: Object.keys(response)
+    });
+  } catch (error: any) {
+    console.error("❌ [TEST] Error:", error);
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack?.split('\n').slice(0, 5),
+      code: error.code,
+      status: error.status
+    });
+  }
+});
+
 // --- CHAT ENDPOINT ---
 app.post("/api/chat", async (req, res) => {
   const startTime = Date.now();
