@@ -9,10 +9,17 @@ An AI-powered Economics tutoring application that helps students learn Oligopoly
 
 ## ✨ Features
 
+### 🏠 NotebookLM-Style Dashboard
+- Modern, clean interface inspired by Google NotebookLM
+- Visual notebook cards with gradient headers
+- Quick access to different economics topics
+- Smooth transitions between dashboard and workspace views
+
 ### 💬 AI Chat Interface
 - Ask questions about Oligopoly, Game Theory, Nash Equilibrium, and more
 - Get detailed explanations powered by Google Gemini AI
 - Markdown-rendered responses with proper formatting
+- API limit detection with user-friendly error messages
 
 ### 📊 Visual Diagrams
 - Automatic Mermaid.js diagram generation for complex concepts
@@ -120,10 +127,14 @@ econ-tutor/
 │   │   ├── hooks/        # Custom React hooks
 │   │   ├── lib/          # Utility functions
 │   │   └── pages/        # Page components
+│   │       ├── Dashboard.tsx    # NotebookLM-style landing page
+│   │       ├── Workspace.tsx    # Main study interface
+│   │       ├── Home.tsx         # View controller
+│   │       └── not-found.tsx
 │   └── index.html
 ├── server/                # Backend Express application
 │   ├── index.ts          # Server entry point
-│   ├── routes.ts         # API routes & AI logic
+│   ├── routes.ts         # API routes & AI logic with error handling
 │   ├── static.ts         # Static file serving
 │   └── vite.ts           # Vite dev server integration
 ├── shared/               # Shared types & schemas
