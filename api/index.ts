@@ -163,6 +163,19 @@ const genAI = new GoogleGenAI({
   apiKey: apiKey || "",
 });
 
+// Health check endpoint to verify API key
+app.get("/api/health", (req, res) => {
+  const hasKey = !!apiKey;
+  const keyPreview = apiKey ? `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}` : "NOT SET";
+  
+  res.json({
+    status: "ok",
+    apiKeyConfigured: hasKey,
+    apiKeyPreview: keyPreview,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // --- CHAT ENDPOINT ---
 app.post("/api/chat", async (req, res) => {
   try {
