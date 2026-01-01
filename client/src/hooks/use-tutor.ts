@@ -14,16 +14,26 @@ export function useChat() {
       });
       
       if (!res.ok) {
-        throw new Error("Failed to get response from AI");
+        const errorData = await res.json().catch(() => ({}));
+        
+        // Check if it's an API limit error (429 status)
+        if (res.status === 429) {
+          const error = new Error(errorData.detail || errorData.message || "API limit reached");
+          (error as any).isApiLimit = true;
+          throw error;
+        }
+        
+        throw new Error(errorData.message || "Failed to get response from AI");
       }
       
       return api.chat.responses[200].parse(await res.json());
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: error.isApiLimit ? "⚠️ API Limit Reached" : "Error",
         description: error.message,
+        duration: error.isApiLimit ? 10000 : 5000,
       });
     },
   });
@@ -40,16 +50,26 @@ export function useGeneratePodcast() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to generate podcast script");
+        const errorData = await res.json().catch(() => ({}));
+        
+        // Check if it's an API limit error (429 status)
+        if (res.status === 429) {
+          const error = new Error(errorData.detail || errorData.message || "API limit reached");
+          (error as any).isApiLimit = true;
+          throw error;
+        }
+        
+        throw new Error(errorData.message || "Failed to generate podcast script");
       }
 
       return api.podcast.responses[200].parse(await res.json());
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Generation Failed",
+        title: error.isApiLimit ? "⚠️ API Limit Reached" : "Generation Failed",
         description: error.message,
+        duration: error.isApiLimit ? 10000 : 5000,
       });
     },
   });
@@ -67,16 +87,26 @@ export function useSummary() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to generate video summary");
+        const errorData = await res.json().catch(() => ({}));
+        
+        // Check if it's an API limit error (429 status)
+        if (res.status === 429) {
+          const error = new Error(errorData.detail || errorData.message || "API limit reached");
+          (error as any).isApiLimit = true;
+          throw error;
+        }
+        
+        throw new Error(errorData.message || "Failed to generate video summary");
       }
 
       return api.summary.responses[200].parse(await res.json());
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Summary Failed",
+        title: error.isApiLimit ? "⚠️ API Limit Reached" : "Summary Failed",
         description: error.message,
+        duration: error.isApiLimit ? 10000 : 5000,
       });
     },
   });

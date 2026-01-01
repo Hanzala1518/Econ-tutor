@@ -134,6 +134,24 @@ PDF NOTES:
 ${TRANSCRIPTS.pdf}
 `;
 
+// Helper function to check if error is API limit related
+function isApiLimitError(error: any): boolean {
+  const errorMsg = error?.message?.toLowerCase() || "";
+  const errorStatus = error?.status || error?.statusCode || 0;
+  
+  // Check for common API limit error indicators
+  return (
+    errorStatus === 429 || // Too Many Requests
+    errorStatus === 403 || // Forbidden (sometimes used for quota)
+    errorMsg.includes("quota") ||
+    errorMsg.includes("limit") ||
+    errorMsg.includes("rate limit") ||
+    errorMsg.includes("exceeded") ||
+    errorMsg.includes("resource_exhausted") ||
+    errorMsg.includes("too many requests")
+  );
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -207,7 +225,16 @@ USER QUESTION: ${query}`;
       res.json({ answer });
     } catch (error) {
       console.error("Gemini Chat Error:", error);
-      res.status(500).json({ message: "Failed to generate chat response" });
+      
+      // Check if error is due to API limit
+      if (isApiLimitError(error)) {
+        res.status(429).json({ 
+          message: "API Key Limit Reached", 
+          detail: "The Gemini API key has reached its usage limit or rate limit. Please try again later or check your API quota at https://aistudio.google.com/"
+        });
+      } else {
+        res.status(500).json({ message: "Failed to generate chat response" });
+      }
     }
   });
 
@@ -254,7 +281,16 @@ USER QUESTION: ${query}`;
       res.json({ script });
     } catch (error) {
       console.error("Gemini Podcast Error:", error);
-      res.status(500).json({ message: "Failed to generate podcast script" });
+      
+      // Check if error is due to API limit
+      if (isApiLimitError(error)) {
+        res.status(429).json({ 
+          message: "API Key Limit Reached", 
+          detail: "The Gemini API key has reached its usage limit or rate limit. Please try again later or check your API quota at https://aistudio.google.com/"
+        });
+      } else {
+        res.status(500).json({ message: "Failed to generate podcast script" });
+      }
     }
   });
 
@@ -295,7 +331,16 @@ USER QUESTION: ${query}`;
     } catch (error) {
       console.error("Gemini Summary Error:", error instanceof Error ? error.message : error);
       console.error("Full error:", error);
-      res.status(500).json({ message: "Failed to generate summary" });
+      
+      // Check if error is due to API limit
+      if (isApiLimitError(error)) {
+        res.status(429).json({ 
+          message: "API Key Limit Reached", 
+          detail: "The Gemini API key has reached its usage limit or rate limit. Please try again later or check your API quota at https://aistudio.google.com/"
+        });
+      } else {
+        res.status(500).json({ message: "Failed to generate summary" });
+      }
     }
   });
 
