@@ -104,6 +104,8 @@ The application will be available at `http://localhost:5000`
 
 ## 📦 Building for Production
 
+### Local Production Build
+
 ```bash
 # Build the application
 npm run build
@@ -111,6 +113,21 @@ npm run build
 # Start production server
 npm start
 ```
+
+### Deploy to Vercel (Recommended)
+
+This project is optimized for Vercel's serverless platform. See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for detailed instructions.
+
+**Quick Deploy:**
+1. Push to GitHub
+2. Import to [Vercel](https://vercel.com/new)
+3. Add `GEMINI_API_KEY` environment variable
+4. Deploy! 🚀
+
+The app includes:
+- Serverless adapter ([api/index.ts](api/index.ts))
+- Vercel configuration ([vercel.json](vercel.json))
+- Optimized routing for API and static files
 
 ## 📁 Project Structure
 
