@@ -217,7 +217,7 @@ If the explanation involves a process, comparison, or structure, you MUST genera
 USER QUESTION: ${query}`;
 
     const response = await genAI.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
@@ -251,7 +251,7 @@ app.post("/api/podcast", async (req, res) => {
     Return the response as a raw JSON list of objects (do not wrap in markdown code blocks): [{'speaker': 'Student', 'text': '...'}, {'speaker': 'Professor', 'text': '...'}]`;
 
     const response = await genAI.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
@@ -312,7 +312,7 @@ app.post("/api/summary", async (req, res) => {
     `;
 
     const response = await genAI.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-1.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
