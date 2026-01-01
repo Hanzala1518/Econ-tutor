@@ -152,16 +152,22 @@ function isApiLimitError(error: any): boolean {
 const app = express();
 app.use(express.json());
 
-// Initialize Gemini - NOTE: Ensure GEMINI_API_KEY is set in Vercel Dashboard
+// Validate API key at startup
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  console.error("CRITICAL: GEMINI_API_KEY is not set in environment variables!");
+  console.error("❌ CRITICAL: GEMINI_API_KEY is not set in environment variables!");
+} else {
+  console.log("✅ Gemini API key configured:", apiKey.slice(0, 8) + "..." + apiKey.slice(-4));
 }
 
-const genAI = new GoogleGenAI({
-  apiKey: apiKey || "",
-});
+// Create Gemini client per request to avoid serverless state issues
+function getGeminiClient() {
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is missing in environment variables");
+  }
+  return new GoogleGenAI({ apiKey });
+}
 
 // Health check endpoint to verify API key
 app.get("/api/health", (req, res) => {
@@ -178,24 +184,24 @@ app.get("/api/health", (req, res) => {
 
 // --- CHAT ENDPOINT ---
 app.post("/api/chat", async (req, res) => {
+  const startTime = Date.now();
+  
   try {
-    console.log("Chat endpoint called with body:", req.body);
-    
-    // Check API key
-    if (!apiKey) {
-      console.error("API Key missing!");
-      return res.status(500).json({ 
-        message: "Server configuration error", 
-        detail: "API key not configured. Please set GEMINI_API_KEY in Vercel environment variables."
-      });
-    }
+    console.log("📨 [CHAT] Request received at:", new Date().toISOString());
+    console.log("📨 [CHAT] Body:", JSON.stringify(req.body).slice(0, 100));
     
     const { query } = req.body;
     
     if (!query) {
+      console.error("❌ [CHAT] Query missing");
       return res.status(400).json({ message: "Query required" });
     }
 
+    console.log("✅ [CHAT] Query:", query.slice(0, 50) + "...");
+    
+    // Create client per request (avoid global state in serverless)
+    const genAI = getGeminiClient();
+    
     const prompt = `You are an expert Economics Tutor. Answer the student's question using ONLY this context: ${FULL_CONTEXT}.
 
 ### VISUALIZATION INSTRUCTIONS (CRITICAL)
@@ -252,13 +258,18 @@ USER QUESTION: ${query}`;
     });
 
     const answer = response.text;
+    const duration = Date.now() - startTime;
+    console.log(`✅ [CHAT] Response generated in ${duration}ms`);
+    
     res.json({ answer });
   } catch (error: any) {
-    console.error("Gemini Chat Error:", error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ [CHAT] Error after ${duration}ms:`, error);
     console.error("Error details:", {
       message: error?.message,
       status: error?.status,
-      stack: error?.stack
+      code: error?.code,
+      stack: error?.stack?.split('\n').slice(0, 3)
     });
     
     if (isApiLimitError(error)) {
@@ -274,16 +285,13 @@ USER QUESTION: ${query}`;
 
 // --- PODCAST ENDPOINT ---
 app.post("/api/podcast", async (req, res) => {
+  const startTime = Date.now();
+  
   try {
-    console.log("Podcast endpoint called");
+    console.log("🎙️ [PODCAST] Request received at:", new Date().toISOString());
     
-    // Check API key
-    if (!apiKey) {
-      return res.status(500).json({ 
-        message: "Server configuration error", 
-        detail: "API key not configured"
-      });
-    }
+    // Create client per request
+    const genAI = getGeminiClient();
     
     const prompt = `Generate a short, engaging 2-person dialogue script (Speaker as "Student" and "Professor") discussing the 'Kinked Demand Curve' and Oligopoly based on the following context: ${FULL_CONTEXT}. 
     The dialogue should:
@@ -320,12 +328,17 @@ app.post("/api/podcast", async (req, res) => {
       }
     }
 
+    const duration = Date.now() - startTime;
+    console.log(`✅ [PODCAST] Generated in ${duration}ms`);
+    
     res.json({ script });
   } catch (error: any) {
-    console.error("Gemini Podcast Error:", error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ [PODCAST] Error after ${duration}ms:`, error);
     console.error("Error details:", {
       message: error?.message,
-      status: error?.status
+      status: error?.status,
+      code: error?.code
     });
     
     if (isApiLimitError(error)) {
@@ -341,23 +354,27 @@ app.post("/api/podcast", async (req, res) => {
 
 // --- SUMMARY ENDPOINT ---
 app.post("/api/summary", async (req, res) => {
+  const startTime = Date.now();
+  
   try {
-    console.log("Summary endpoint called with videoId:", req.body.videoId);
-    
-    // Check API key
-    if (!apiKey) {
-      return res.status(500).json({ 
-        message: "Server configuration error", 
-        detail: "API key not configured"
-      });
-    }
+    console.log("📄 [SUMMARY] Request received at:", new Date().toISOString());
+    console.log("📄 [SUMMARY] Body:", JSON.stringify(req.body));
     
     const { videoId } = req.body;
+    console.log("📄 [SUMMARY] Video ID:", videoId);
+    
     const specificTranscript = TRANSCRIPTS[videoId];
 
     if (!specificTranscript) {
+      console.error("❌ [SUMMARY] Transcript not found for videoId:", videoId);
+      console.error("Available IDs:", Object.keys(TRANSCRIPTS));
       return res.status(404).json({ message: "Video transcript not found" });
     }
+
+    console.log("✅ [SUMMARY] Transcript found, length:", specificTranscript.length);
+    
+    // Create client per request
+    const genAI = getGeminiClient();
 
     const prompt = `
       You are an expert study assistant. 
@@ -370,18 +387,26 @@ app.post("/api/summary", async (req, res) => {
       ${specificTranscript}
     `;
 
+    console.log("🤖 [SUMMARY] Calling Gemini API...");
+
     const response = await genAI.models.generateContent({
       model: "gemini-1.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
     const summary = response.text;
+    const duration = Date.now() - startTime;
+    console.log(`✅ [SUMMARY] Generated in ${duration}ms, length: ${summary?.length || 0}`);
+    
     res.json({ summary });
   } catch (error: any) {
-    console.error("Gemini Summary Error:", error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ [SUMMARY] Error after ${duration}ms:`, error);
     console.error("Error details:", {
       message: error?.message,
-      status: error?.status
+      status: error?.status,
+      code: error?.code,
+      stack: error?.stack?.split('\n').slice(0, 5)
     });
     
     if (isApiLimitError(error)) {
